@@ -10,12 +10,9 @@ Usage:
     # All LangChain tool calls and agent outputs are now signed
 """
 
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Optional
 from functools import wraps
 import os
-
-from moss import Subject
-from moss.errors import KeyNotFound
 
 from .callback import SignedCallbackHandler, _get_or_create_subject
 
