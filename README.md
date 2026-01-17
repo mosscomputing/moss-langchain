@@ -1,6 +1,6 @@
 # moss-langchain
 
-MOSS signing integration for LangChain via callback handler.
+MOSS signing integration for LangChain. **Unsigned output is broken output.**
 
 ## Installation
 
@@ -8,7 +8,33 @@ MOSS signing integration for LangChain via callback handler.
 pip install moss-langchain
 ```
 
-## Usage
+## Quick Start: Auto-Signing (Recommended)
+
+The easiest way to use MOSS with LangChain is to enable auto-signing:
+
+```python
+from moss_langchain import enable_moss
+
+# Enable auto-signing for all LangChain operations
+enable_moss("moss:myteam:langchain-agent")
+
+# All subsequent tool calls, chain outputs, and agent actions are signed automatically
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
+result = chain.invoke({"text": "Long document..."})  # Output is signed!
+```
+
+You can also enable auto-signing via environment variable:
+
+```bash
+export MOSS_AUTO_ENABLE=true
+```
+
+## Manual Usage with Callback Handler
+
+For more control, use the callback handler directly:
 
 ```python
 from langchain_core.prompts import ChatPromptTemplate
@@ -34,10 +60,18 @@ envelope = cb.envelope
 ## Verification
 
 ```python
-from moss import Subject
+from moss import verify
 
-# Verify the output
-result = Subject.verify(cb.envelope)
+# Verify the output - no network required
+result = verify(cb.envelope)
+
+if result.valid:
+    print(f"Signed by: {result.subject}")
+else:
+    print(f"Invalid: {result.reason}")
+
+# Or use envelope.verify() directly
+result = envelope.verify()
 assert result.valid
 ```
 
