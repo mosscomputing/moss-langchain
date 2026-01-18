@@ -2,6 +2,8 @@
 
 MOSS signing integration for LangChain. **Unsigned output is broken output.**
 
+[![PyPI](https://img.shields.io/pypi/v/moss-langchain)](https://pypi.org/project/moss-langchain/)
+
 ## Installation
 
 ```bash
@@ -53,7 +55,7 @@ result = chain.invoke(
     config={"callbacks": [cb]}
 )
 
-# Access the signature
+# Access the envelope
 envelope = cb.envelope
 ```
 
@@ -73,6 +75,19 @@ else:
 # Or use envelope.verify() directly
 result = envelope.verify()
 assert result.valid
+```
+
+## Execution Record
+
+Each signed output produces a verifiable execution record:
+
+```
+agent_id:      moss:bot:summary
+timestamp:     2026-01-18T12:34:56Z
+sequence:      1
+payload_hash:  SHA-256:abc123...
+signature:     ML-DSA-44:xyz789...
+status:        VERIFIED
 ```
 
 ## Multiple Outputs
@@ -111,3 +126,19 @@ The handler signs outputs from:
 - `on_tool_end` - Tool execution complete
 - `on_agent_finish` - Agent finished
 - `on_retriever_end` - Retriever returned documents
+
+## Evidence Retention
+
+Free tier provides runtime enforcement only. Production environments require retained, verifiable execution records.
+
+See [mosscomputing.com](https://mosscomputing.com) for evidence continuity options.
+
+## Links
+
+- [moss-sdk](https://pypi.org/project/moss-sdk/) - Core MOSS SDK
+- [mosscomputing.com](https://mosscomputing.com) - Project site
+- [app.mosscomputing.com](https://app.mosscomputing.com) - Dashboard
+
+## License
+
+MIT
