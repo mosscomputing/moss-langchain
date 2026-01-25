@@ -17,7 +17,7 @@ Example:
         print(f"Signed: {result.signature}")
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from moss import sign, sign_async, verify, SignResult, VerifyResult
 
