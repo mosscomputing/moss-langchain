@@ -10,134 +10,121 @@ MOSS signing integration for LangChain. **Unsigned output is broken output.**
 pip install moss-langchain
 ```
 
-## Quick Start: Auto-Signing (Recommended)
+## Quick Start: Explicit Signing (Recommended)
 
-The easiest way to use MOSS with LangChain is to enable auto-signing:
-
-```python
-from moss_langchain import enable_moss
-
-# Enable auto-signing for all LangChain operations
-enable_moss("moss:myteam:langchain-agent")
-
-# All subsequent tool calls, chain outputs, and agent actions are signed automatically
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-
-chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
-result = chain.invoke({"text": "Long document..."})  # Output is signed!
-```
-
-You can also enable auto-signing via environment variable:
-
-```bash
-export MOSS_AUTO_ENABLE=true
-```
-
-## Manual Usage with Callback Handler
-
-For more control, use the callback handler directly:
+Sign specific outputs with full control:
 
 ```python
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from moss_langchain import SignedCallbackHandler
+from moss_langchain import sign_tool_call, sign_chain_result, sign_message
 
-# Create callback handler
-cb = SignedCallbackHandler("moss:bot:summary")
+# Sign a tool call
+tool_call = {"name": "get_weather", "args": {"location": "NYC"}, "id": "call_123"}
+result = sign_tool_call(tool_call, agent_id="weather-bot")
+print(f"Signed: {result.signature[:20]}...")
 
-# Create your chain
-chain = ChatPromptTemplate.from_template("Summarize: {text}") | ChatOpenAI()
+# Sign a chain result
+chain = ChatOpenAI() | StrOutputParser()
+output = chain.invoke("What is 2+2?")
+result = sign_chain_result(output, agent_id="math-bot", chain_name="calculator")
 
-# Invoke with callback
-result = chain.invoke(
-    {"text": "Long document..."},
-    config={"callbacks": [cb]}
+# Sign a message
+message = AIMessage(content="The answer is 4")
+result = sign_message(message, agent_id="math-bot")
+```
+
+## Enterprise Mode
+
+Set `MOSS_API_KEY` for automatic policy evaluation:
+
+```python
+import os
+os.environ["MOSS_API_KEY"] = "your-api-key"
+
+from moss_langchain import sign_tool_call, enterprise_enabled
+
+print(f"Enterprise: {enterprise_enabled()}")  # True
+
+# Tool calls are evaluated against policies
+result = sign_tool_call(
+    {"name": "send_email", "args": {"to": "user@example.com"}, "id": "call_1"},
+    agent_id="email-bot",
+    context={"user_id": "u123"}
 )
 
-# Access the envelope
-envelope = cb.envelope
+if result.blocked:
+    print(f"Blocked by policy: {result.policy.reason}")
+```
+
+## Callback Handler for Auto-Signing
+
+For automatic signing of all chain events:
+
+```python
+from moss_langchain import MOSSCallbackHandler
+
+# Create handler - signs tool calls and chain outputs
+handler = MOSSCallbackHandler(
+    agent_id="my-agent",
+    sign_tools=True,
+    sign_chains=True
+)
+
+chain = ChatOpenAI() | StrOutputParser()
+result = chain.invoke("Hello", config={"callbacks": [handler]})
+
+# Access signed envelopes
+for envelope in handler.envelopes:
+    print(f"Signed: {envelope.subject}")
 ```
 
 ## Verification
 
 ```python
-from moss import verify
+from moss_langchain import verify_envelope
 
-# Verify the output - no network required
-result = verify(cb.envelope)
-
-if result.valid:
-    print(f"Signed by: {result.subject}")
-else:
-    print(f"Invalid: {result.reason}")
-
-# Or use envelope.verify() directly
-result = envelope.verify()
-assert result.valid
+# Verify any signed envelope
+verify_result = verify_envelope(result.envelope)
+if verify_result.valid:
+    print(f"Signed by: {verify_result.subject}")
 ```
 
-## Execution Record
+## All Functions
 
-Each signed output produces a verifiable execution record:
+| Function | Description |
+|----------|-------------|
+| `sign_tool_call()` | Sign a LangChain tool call |
+| `sign_chain_result()` | Sign chain output |
+| `sign_message()` | Sign an AI message |
+| `sign_tool_result()` | Sign tool execution result |
+| `sign_output()` | Sign any output (generic) |
+| `verify_envelope()` | Verify a signed envelope |
 
-```
-agent_id:      moss:bot:summary
-timestamp:     2026-01-18T12:34:56Z
-sequence:      1
-payload_hash:  SHA-256:abc123...
-signature:     ML-DSA-44:xyz789...
-status:        VERIFIED
-```
+## Legacy API
 
-## Multiple Outputs
-
-The handler tracks all outputs during a session:
+The old auto-signing API is still available for backwards compatibility:
 
 ```python
-cb = SignedCallbackHandler("moss:bot:pipeline")
+from moss_langchain import enable_moss, SignedCallbackHandler
 
-# Run multiple operations
-chain1.invoke(input1, config={"callbacks": [cb]})
-chain2.invoke(input2, config={"callbacks": [cb]})
-
-# Access all envelopes
-for envelope in cb.envelopes:
-    print(f"Seq {envelope.seq}: {envelope.payload_hash}")
-
-# Clear for next session
-cb.clear()
+enable_moss("moss:myteam:agent")  # Global auto-signing
+cb = SignedCallbackHandler("moss:bot:summary")  # Per-chain signing
 ```
 
-## Async Chains
+## Enterprise Features
 
-```python
-from moss_langchain import AsyncSignedCallbackHandler
-
-cb = AsyncSignedCallbackHandler("moss:bot:async")
-result = await chain.ainvoke(input, config={"callbacks": [cb]})
-```
-
-## Signed Events
-
-The handler signs outputs from:
-- `on_llm_end` - LLM generation complete
-- `on_chain_end` - Chain execution complete
-- `on_tool_end` - Tool execution complete
-- `on_agent_finish` - Agent finished
-- `on_retriever_end` - Retriever returned documents
-
-## Evidence Retention
-
-Free tier provides runtime enforcement only. Production environments require retained, verifiable execution records.
-
-See [mosscomputing.com](https://mosscomputing.com) for evidence continuity options.
+| Feature | Free | Enterprise |
+|---------|------|------------|
+| Local signing | ✓ | ✓ |
+| Offline verification | ✓ | ✓ |
+| Policy evaluation | - | ✓ |
+| Evidence retention | - | ✓ |
+| Audit exports | - | ✓ |
 
 ## Links
 
 - [moss-sdk](https://pypi.org/project/moss-sdk/) - Core MOSS SDK
 - [mosscomputing.com](https://mosscomputing.com) - Project site
-- [app.mosscomputing.com](https://app.mosscomputing.com) - Dashboard
 
 ## License
 

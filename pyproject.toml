@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "moss-langchain"
-version = "0.1.0"
-description = "MOSS signing integration for LangChain via callback handler"
+version = "0.2.0"
+description = "MOSS cryptographic signing for LangChain - explicit signing with enterprise support"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "moss-sdk>=0.1.0",
+    "moss-sdk>=0.3.0",
     "langchain-core>=0.1.0",
 ]
 
