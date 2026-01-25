@@ -128,4 +128,9 @@ cb = SignedCallbackHandler("moss:bot:summary")  # Per-chain signing
 
 ## License
 
-Proprietary - See [LICENSE](LICENSE) for terms.
+This package is licensed under the [Business Source License 1.1](LICENSE).
+
+- Free for evaluation, testing, and development
+- Free for non-production use
+- Production use requires a [MOSS subscription](https://mosscomputing.com/pricing)
+- Converts to Apache 2.0 on January 25, 2030
