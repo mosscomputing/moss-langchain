@@ -128,4 +128,4 @@ cb = SignedCallbackHandler("moss:bot:summary")  # Per-chain signing
 
 ## License
 
-MIT
+Proprietary - See [LICENSE](LICENSE) for terms.
