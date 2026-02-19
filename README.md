@@ -111,15 +111,30 @@ enable_moss("moss:myteam:agent")  # Global auto-signing
 cb = SignedCallbackHandler("moss:bot:summary")  # Per-chain signing
 ```
 
-## Enterprise Features
+## Pricing Tiers
 
-| Feature | Free | Enterprise |
-|---------|------|------------|
-| Local signing | ✓ | ✓ |
-| Offline verification | ✓ | ✓ |
-| Policy evaluation | - | ✓ |
-| Evidence retention | - | ✓ |
-| Audit exports | - | ✓ |
+| Tier | Price | Agents | Signatures | Retention |
+|------|-------|--------|------------|-----------|
+| **Free** | $0 | 5 | 1,000/day | 7 days |
+| **Pro** | $1,499/mo | Unlimited | Unlimited | 1 year |
+| **Enterprise** | Custom | Unlimited | Unlimited | 7 years |
+
+*Annual billing: $1,249/mo (save $3,000/year)*
+
+All new signups get a **14-day free trial** of Pro.
+
+### Features by Tier
+
+| Feature | Free | Pro | Enterprise |
+|---------|------|-----|------------|
+| Local signing | ✓ | ✓ | ✓ |
+| Offline verification | ✓ | ✓ | ✓ |
+| Policy evaluation | - | ✓ | ✓ |
+| RBAC | - | ✓ | ✓ |
+| Evidence retention | 7 days | 1 year | 7 years |
+| Slack/Teams alerts | - | ✓ | ✓ + Buttons |
+| SIEM integration | - | ✓ | ✓ |
+| Compliance exports | - | ✓ | ✓ |
 
 ## Links
 
