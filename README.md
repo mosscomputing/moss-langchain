@@ -1,6 +1,10 @@
 # moss-langchain
 
-MOSS signing integration for LangChain. **Unsigned output is broken output.**
+MOSS integration for [LangChain](https://langchain.com) - cryptographic signing for AI agent actions.
+
+**Unsigned agent output is broken output.**
+
+All signatures use **ML-DSA-44** (NIST FIPS 204), the post-quantum cryptographic standard.
 
 [![PyPI](https://img.shields.io/pypi/v/moss-langchain)](https://pypi.org/project/moss-langchain/)
 
@@ -136,10 +140,20 @@ All new signups get a **14-day free trial** of Pro.
 | SIEM integration | - | ✓ | ✓ |
 | Compliance exports | - | ✓ | ✓ |
 
+## Why Sign LangChain Actions?
+
+1. **Compliance** - Prove to auditors exactly what your AI did
+2. **Accountability** - Cryptographic proof of every action (ML-DSA-44)
+3. **Policy Enforcement** - Block high-risk actions automatically
+4. **Debugging** - Trace multi-step chains with causal linking
+5. **Future-Proof** - Post-quantum signatures (NIST FIPS 204)
+
 ## Links
 
-- [moss-sdk](https://pypi.org/project/moss-sdk/) - Core MOSS SDK
 - [mosscomputing.com](https://mosscomputing.com) - Project site
+- [app.mosscomputing.com](https://app.mosscomputing.com) - Developer Console
+- [moss-sdk](https://pypi.org/project/moss-sdk/) - Core MOSS SDK
+- [LangChain](https://langchain.com) - LangChain framework
 
 ## License
 
