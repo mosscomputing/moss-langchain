@@ -1,12 +1,13 @@
 # moss-langchain
 
-MOSS integration for [LangChain](https://langchain.com) - cryptographic signing for AI agent actions.
-
-**Unsigned agent output is broken output.**
-
-All signatures use **ML-DSA-44** (NIST FIPS 204), the post-quantum cryptographic standard.
+Cryptographic signing for LangChain AI agent actions using ML-DSA-44 post-quantum signatures.
 
 [![PyPI](https://img.shields.io/pypi/v/moss-langchain)](https://pypi.org/project/moss-langchain/)
+[![License](https://img.shields.io/badge/license-BSL--1.1-blue)](LICENSE)
+
+## Overview
+
+moss-langchain integrates MOSS cryptographic signing into your LangChain workflows. Every tool call, chain output, and AI message gets a tamper-evident signature using ML-DSA-44 (NIST FIPS 204), the post-quantum cryptographic standard. This creates an immutable audit trail for compliance, debugging, and accountability.
 
 ## Installation
 
@@ -14,13 +15,11 @@ All signatures use **ML-DSA-44** (NIST FIPS 204), the post-quantum cryptographic
 pip install moss-langchain
 ```
 
-## Quick Start: Explicit Signing (Recommended)
-
-Sign specific outputs with full control:
+## Quick Start
 
 ```python
 from langchain_openai import ChatOpenAI
-from moss_langchain import sign_tool_call, sign_chain_result, sign_message
+from moss_langchain import sign_tool_call, sign_chain_result
 
 # Sign a tool call
 tool_call = {"name": "get_weather", "args": {"location": "NYC"}, "id": "call_123"}
@@ -31,43 +30,65 @@ print(f"Signed: {result.signature[:20]}...")
 chain = ChatOpenAI() | StrOutputParser()
 output = chain.invoke("What is 2+2?")
 result = sign_chain_result(output, agent_id="math-bot", chain_name="calculator")
+```
+
+## Features
+
+- **ML-DSA-44 signatures** - Post-quantum cryptographic standard (NIST FIPS 204)
+- **Tool call signing** - Sign every LangChain tool invocation
+- **Chain result signing** - Sign outputs from any chain or pipeline
+- **Message signing** - Sign individual AI messages
+- **Callback handler** - Auto-sign all chain events with `MOSSCallbackHandler`
+- **Policy enforcement** - Block high-risk actions with enterprise policies
+- **Offline verification** - Verify signatures without network access
+
+## Usage Examples
+
+### Basic Usage
+
+```python
+from moss_langchain import sign_tool_call, sign_message, verify_envelope
+from langchain_core.messages import AIMessage
+
+# Sign a tool call
+result = sign_tool_call(
+    {"name": "send_email", "args": {"to": "user@example.com"}, "id": "call_1"},
+    agent_id="email-bot"
+)
 
 # Sign a message
 message = AIMessage(content="The answer is 4")
 result = sign_message(message, agent_id="math-bot")
+
+# Verify any envelope
+verify_result = verify_envelope(result.envelope)
+print(f"Valid: {verify_result.valid}, Subject: {verify_result.subject}")
 ```
 
-## Enterprise Mode
-
-Set `MOSS_API_KEY` for automatic policy evaluation:
+### With Policy Enforcement
 
 ```python
 import os
 os.environ["MOSS_API_KEY"] = "your-api-key"
 
-from moss_langchain import sign_tool_call, enterprise_enabled
+from moss_langchain import sign_tool_call
 
-print(f"Enterprise: {enterprise_enabled()}")  # True
-
-# Tool calls are evaluated against policies
 result = sign_tool_call(
-    {"name": "send_email", "args": {"to": "user@example.com"}, "id": "call_1"},
-    agent_id="email-bot",
-    context={"user_id": "u123"}
+    {"name": "transfer_funds", "args": {"amount": 50000}, "id": "call_1"},
+    agent_id="finance-bot",
+    context={"user_id": "u123", "department": "finance"}
 )
 
 if result.blocked:
     print(f"Blocked by policy: {result.policy.reason}")
 ```
 
-## Callback Handler for Auto-Signing
-
-For automatic signing of all chain events:
+### Callback Handler
 
 ```python
 from moss_langchain import MOSSCallbackHandler
+from langchain_openai import ChatOpenAI
 
-# Create handler - signs tool calls and chain outputs
 handler = MOSSCallbackHandler(
     agent_id="my-agent",
     sign_tools=True,
@@ -77,23 +98,12 @@ handler = MOSSCallbackHandler(
 chain = ChatOpenAI() | StrOutputParser()
 result = chain.invoke("Hello", config={"callbacks": [handler]})
 
-# Access signed envelopes
+# Access all signed envelopes
 for envelope in handler.envelopes:
     print(f"Signed: {envelope.subject}")
 ```
 
-## Verification
-
-```python
-from moss_langchain import verify_envelope
-
-# Verify any signed envelope
-verify_result = verify_envelope(result.envelope)
-if verify_result.valid:
-    print(f"Signed by: {verify_result.subject}")
-```
-
-## All Functions
+## API Reference
 
 | Function | Description |
 |----------|-------------|
@@ -103,63 +113,22 @@ if verify_result.valid:
 | `sign_tool_result()` | Sign tool execution result |
 | `sign_output()` | Sign any output (generic) |
 | `verify_envelope()` | Verify a signed envelope |
+| `enterprise_enabled()` | Check if enterprise mode is active |
+| `MOSSCallbackHandler` | Auto-signing callback handler |
 
-## Legacy API
+## Configuration
 
-The old auto-signing API is still available for backwards compatibility:
-
-```python
-from moss_langchain import enable_moss, SignedCallbackHandler
-
-enable_moss("moss:myteam:agent")  # Global auto-signing
-cb = SignedCallbackHandler("moss:bot:summary")  # Per-chain signing
-```
-
-## Pricing Tiers
-
-| Tier | Price | Agents | Signatures | Retention |
-|------|-------|--------|------------|-----------|
-| **Free** | $0 | 5 | 1,000/day | 7 days |
-| **Pro** | $1,499/mo | Unlimited | Unlimited | 1 year |
-| **Enterprise** | Custom | Unlimited | Unlimited | 7 years |
-
-*Annual billing: $1,249/mo (save $3,000/year)*
-
-All new signups get a **14-day free trial** of Pro.
-
-### Features by Tier
-
-| Feature | Free | Pro | Enterprise |
-|---------|------|-----|------------|
-| Local signing | ✓ | ✓ | ✓ |
-| Offline verification | ✓ | ✓ | ✓ |
-| Policy evaluation | - | ✓ | ✓ |
-| RBAC | - | ✓ | ✓ |
-| Evidence retention | 7 days | 1 year | 7 years |
-| Slack/Teams alerts | - | ✓ | ✓ + Buttons |
-| SIEM integration | - | ✓ | ✓ |
-| Compliance exports | - | ✓ | ✓ |
-
-## Why Sign LangChain Actions?
-
-1. **Compliance** - Prove to auditors exactly what your AI did
-2. **Accountability** - Cryptographic proof of every action (ML-DSA-44)
-3. **Policy Enforcement** - Block high-risk actions automatically
-4. **Debugging** - Trace multi-step chains with causal linking
-5. **Future-Proof** - Post-quantum signatures (NIST FIPS 204)
+| Environment Variable | Description |
+|---------------------|-------------|
+| `MOSS_API_KEY` | API key for enterprise features (policy enforcement, SIEM) |
+| `MOSS_API_URL` | Custom API endpoint (default: api.mosscomputing.com) |
 
 ## Links
 
-- [mosscomputing.com](https://mosscomputing.com) - Project site
-- [app.mosscomputing.com](https://app.mosscomputing.com) - Developer Console
-- [moss-sdk](https://pypi.org/project/moss-sdk/) - Core MOSS SDK
-- [LangChain](https://langchain.com) - LangChain framework
+- [Documentation](https://docs.mosscomputing.com/sdks/langchain)
+- [Dashboard](https://app.mosscomputing.com)
+- [PyPI](https://pypi.org/project/moss-langchain/)
 
 ## License
 
-This package is licensed under the [Business Source License 1.1](LICENSE).
-
-- Free for evaluation, testing, and development
-- Free for non-production use
-- Production use requires a [MOSS subscription](https://mosscomputing.com/pricing)
-- Converts to Apache 2.0 on January 25, 2030
+Business Source License 1.1 - Production use requires a [MOSS subscription](https://mosscomputing.com/pricing).
